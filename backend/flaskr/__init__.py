@@ -135,21 +135,14 @@ def create_app(test_config=None):
         error = False
         body = request.get_json()
         searchTerm = body.get('searchTerm', None)
-        try:
-            new_question = body.get('question')
-            new_question_ans = body.get('answer')
-            new_question_cat = body.get('category')
-            new_question_diff = body.get('difficulty')
-        except:
-            abort(422)
 
         if not searchTerm:
             try:
                 question = Question(
-                    question=new_question, 
-                    answer=new_question_ans,
-                    category=new_question_cat,
-                    difficulty=new_question_diff)
+                    question=body.get('question'), 
+                    answer=body.get('answer'),
+                    category=body.get('category'),
+                    difficulty=body.get('difficulty'))
                 question.insert()
             except:
                 db.session.rollback()
@@ -158,7 +151,7 @@ def create_app(test_config=None):
                 db.session.close()
             
             if error:
-                abort(500)
+                abort(422)
             else:
                 return jsonify({'success': True})
         else:
@@ -272,6 +265,14 @@ def create_app(test_config=None):
             "message": "resource not found"
         }), 404
 
+    @app.errorhandler(405)
+    def not_allowed(error):
+        return jsonify({
+            "success": False,
+            "error": 405,
+            "message": "method not allowed"
+        }), 405
+
     @app.errorhandler(422)
     def unprocessable(error):
         return jsonify({
@@ -289,7 +290,7 @@ def create_app(test_config=None):
         }), 400
 
     @app.errorhandler(500)
-    def bad_request(error):
+    def server_error(error):
         return jsonify({
             "success": False,
             "error": 500,
